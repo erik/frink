@@ -11,10 +11,15 @@ static char* ReadWord(FILE* fp) {
     if(isspace(c)) {
       return word;
     }
-    char* tmp = malloc(++allocated);
-    strcpy(tmp, word);      
-    free(word);
-    word = tmp;
+    ++allocated;
+    if(word != NULL) {
+      char* tmp = malloc(allocated);
+      strcpy(tmp, word);      
+      free(word);
+      word = tmp;
+    } else {
+      word = malloc(allocated);
+    }
     word[allocated - 1] = c;
   }
   return word;  
@@ -43,14 +48,23 @@ static char* ReadString(FILE* fp) {
 }
 
 static Token WordToToken(FILE* fp, char* word) {
+  if(word == NULL) {
+    return MakeToken("NULL");
+  }
   int length = strlen(word);
 
   if(!length) {
     return MakeToken(word);
   }
 
-  if(length == 1 && word[0] == '"') {
-    return StringToken(ReadString(fp));
+  if(length == 1) {
+    if(word[0] == '"') {
+      return StringToken(ReadString(fp));
+    } else if(word[0] == '(') {
+      char c;
+      while((c = fgetc(fp)) != ')' && c != EOF) {}
+      return WordToToken(fp, ReadWord(fp));
+    }
   }
 
   if(isdigit(word[0])) {
@@ -72,6 +86,7 @@ static Token WordToToken(FILE* fp, char* word) {
 	return WordToken(word);
       }
     }
+    return NumberToken(word);
   } 
 
   return WordToken(word);
@@ -87,17 +102,14 @@ FrinkProgram* LoadFile(FILE* fp, char* name) {
   while(!feof(fp)) {
     char *word = ReadWord(fp);
     Token t = WordToToken(fp, word);
-    
-    Token* tmp = malloc(++numtokens);
-    int i;
-    for(i = 0; i < numtokens - 1; ++i) {
-      tmp[i] = tokens[i];
+
+    if(strcmp(t.content, "NULL") == 0 && feof(fp)) {
+      break;
     }
 
-    tmp[i] = t;
-    
-    free(tokens);
+    Token* tmp = realloc(tokens, sizeof(Token) * ++numtokens);
     tokens = tmp;
+    tokens[numtokens - 1] = t;
   }
   frink->tokens = tokens;
   frink->len = numtokens;
