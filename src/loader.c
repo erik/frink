@@ -1,8 +1,42 @@
 #include <ctype.h>
+#include <string.h>
 
 #include "loader.h"
 #include "token.h"
 
+static char * currWord;
+
+static long LineLength(FILE* fp) {
+  fpos_t start;
+  long int bol;
+  long int eol;
+
+  fgetpos (fp, &start);
+  bol = ftell(fp);
+  char c;  
+  while((c = fgetc(fp)) != EOF && (c != '\n' || c != '\r')) {}
+
+  eol = ftell(fp);
+
+  fsetpos (fp, &start);
+
+  printf("line len => %ld\n", eol - bol);
+  return eol - bol;
+
+}
+
+static char* ReadLine(FILE* fp) {
+  long len = LineLength(fp);
+  if(len <= 1) {
+    return NULL;
+  }
+  char* line = malloc(len);
+  line = fgets(line, len, fp);
+  return line;
+}
+
+
+//TODO: get rid of me
 static char* ReadWord(FILE* fp) {
   char* word = NULL;
   int   allocated = 0;
@@ -23,6 +57,18 @@ static char* ReadWord(FILE* fp) {
     word[allocated - 1] = c;
   }
   return word;  
+} 
+
+static void ReadWordFromLine(char* line) {
+  if(line == NULL) {
+    currWord = NULL;
+    return;
+  }
+  if(currWord == NULL) {
+    currWord = strtok (line, " \f\n\r\t\v");
+  } else {
+    currWord = strtok (NULL, " ");
+  }
 }
 
 static char* ReadString(FILE* fp) {
@@ -47,6 +93,8 @@ static char* ReadString(FILE* fp) {
   return str;
 }
 
+//FIXME: get rid of FILE*
+                       //char* line
 static Token WordToToken(FILE* fp, char* word) {
   if(word == NULL) {
     return MakeToken("NULL");
@@ -99,18 +147,24 @@ FrinkProgram* LoadFile(FILE* fp, char* name) {
   int numtokens = 0;
   Token* tokens = NULL;
 
-  while(!feof(fp)) {
-    char *word = ReadWord(fp);
-    Token t = WordToToken(fp, word);
+  currWord = NULL;
 
-    if(strcmp(t.content, "NULL") == 0 && feof(fp)) {
+  while(!feof(fp)) {
+    char *line = ReadLine(fp);
+    if(line == NULL || feof(fp)) {
       break;
     }
-
-    Token* tmp = realloc(tokens, sizeof(Token) * ++numtokens);
-    tokens = tmp;
-    tokens[numtokens - 1] = t;
+    do {
+      ReadWordFromLine(line);
+      printf("word => %s\n", currWord);
+      Token t = WordToToken(fp, currWord);
+      
+      Token* tmp = realloc(tokens, sizeof(Token) * ++numtokens);
+      tokens = tmp;
+      tokens[numtokens - 1] = t;
+    } while(currWord != NULL);
   }
+
   frink->tokens = tokens;
   frink->len = numtokens;
   return frink;
