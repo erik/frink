@@ -4,7 +4,9 @@
 #include "loader.h"
 #include "token.h"
 
-static char * currWord;
+static char *  currWord;
+static char *  currLine;
+static size_t  lineIndex;
 
 static long LineLength(FILE* fp) {
   fpos_t start;
@@ -20,82 +22,70 @@ static long LineLength(FILE* fp) {
 
   fsetpos (fp, &start);
 
-  printf("line len => %ld\n", eol - bol);
   return eol - bol;
-
 }
 
 static char* ReadLine(FILE* fp) {
+  lineIndex = 0;
   long len = LineLength(fp);
   if(len <= 1) {
     return NULL;
   }
-  char* line = malloc(len);
+  char* line = malloc(len + 1);
   line = fgets(line, len, fp);
+
+  size_t i;
+  for(i = 0; i < strlen(line); ++i) {
+    if(line[i] == '\n') {
+      line[i] = '\0';
+      break;
+    }
+  }
+
+  printf(">>%s<<\n", line);
   return line;
 }
 
-
-//TODO: get rid of me
-static char* ReadWord(FILE* fp) {
-  char* word = NULL;
-  int   allocated = 0;
-  char c;
-  while((c = fgetc(fp)) != EOF) {
-    if(isspace(c)) {
-      return word;
-    }
-    ++allocated;
-    if(word != NULL) {
-      char* tmp = malloc(allocated);
-      strcpy(tmp, word);      
-      free(word);
-      word = tmp;
-    } else {
-      word = malloc(allocated);
-    }
-    word[allocated - 1] = c;
-  }
-  return word;  
-} 
-
-static void ReadWordFromLine(char* line) {
-  if(line == NULL) {
+static void ReadWordFromLine() {
+  if(currLine == NULL) {
     currWord = NULL;
     return;
   }
   if(currWord == NULL) {
-    currWord = strtok (line, " \f\n\r\t\v");
+    currWord = strtok (currLine, " \f\n\r\t\v");
   } else {
     currWord = strtok (NULL, " ");
   }
+
+  if(currWord) {   
+    while(currLine[lineIndex++] != 0);
+  } else {
+    lineIndex = -1;
+  }
 }
 
-static char* ReadString(FILE* fp) {
-  char* str = NULL;
-  int   allocated = 0;
-  
-  char c;
-  while((c = fgetc(fp))) {
-    if(c == EOF) {
-      fprintf(stderr, "Unterminated string: %s\n", str);
-      return NULL;
+static char* ReadString(char* line) {
+  int pos = lineIndex;
+  char* str = malloc(strlen(line) - pos);
+  size_t ctr;  
+
+  for(ctr = pos; ctr < strlen(line); ++ctr) {
+    char c = line[ctr];
+    if(c == EOF || c == 0) {
+      break;
     } else if (c == '"') {
       return str;
     } else {
-      char* tmp = malloc(++allocated);
-      strcpy(tmp, str);
-      free(str);
-      str = tmp;
-      str[allocated - 1] = c;
+      str[ctr] = c;
     }
   }
-  return str;
+
+  /* if here, string isn't terminated on line */
+  fprintf(stderr, "Unterminated string: %s\n", str);
+  return NULL;
 }
 
-//FIXME: get rid of FILE*
-                       //char* line
-static Token WordToToken(FILE* fp, char* word) {
+static Token WordToToken(char* line, char* word) {
   if(word == NULL) {
     return MakeToken("NULL");
   }
@@ -106,12 +96,28 @@ static Token WordToToken(FILE* fp, char* word) {
   }
 
   if(length == 1) {
+    /* string */
     if(word[0] == '"') {
-      return StringToken(ReadString(fp));
+
+      return StringToken(ReadString(line));
+
+      /* comment */
     } else if(word[0] == '(') {
-      char c;
-      while((c = fgetc(fp)) != ')' && c != EOF) {}
-      return WordToToken(fp, ReadWord(fp));
+
+      while(currWord) {
+        ReadWordFromLine();
+        if(currWord && strlen(currWord) == 1 && currWord[0] == ')') {
+          ReadWordFromLine();
+          break;
+        }
+      }
+
+      if(lineIndex >= strlen(line)) {
+        fprintf(stderr, "Unterminated comment on line: %s\n", line);
+        return WordToToken(NULL, NULL);
+      }
+
+      return WordToToken(line, currWord);
     }
   }
 
@@ -151,14 +157,22 @@ FrinkProgram* LoadFile(FILE* fp, char* name) {
 
   while(!feof(fp)) {
     char *line = ReadLine(fp);
+    if(!line) {
+      break;
+    }
+    char *fakeLine = malloc(strlen(line));
+    strcpy(fakeLine, line);
+    currLine = fakeLine;
+
     if(line == NULL || feof(fp)) {
       break;
     }
     do {
-      ReadWordFromLine(line);
-      printf("word => %s\n", currWord);
-      Token t = WordToToken(fp, currWord);
+      ReadWordFromLine();
+      Token t = WordToToken(line, currWord);
       
+      printf("Token added: %s\n", t.content);
+
       Token* tmp = realloc(tokens, sizeof(Token) * ++numtokens);
       tokens = tmp;
       tokens[numtokens - 1] = t;

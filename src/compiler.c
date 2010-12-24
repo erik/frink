@@ -99,7 +99,6 @@ AttoBlock* compileFrink(FrinkProgram* fp) {
 	AttoNumber d = strtod(t.content, NULL);
 
 	Instruction in = pushConstant(b, createNumber(d));
-	printf("%Lf => constant index => %d\n", d, in);
 	AttoBlock_push_inst(b, OP_PUSHCONST);
 	AttoBlock_push_inst(b, in);
 
@@ -108,7 +107,9 @@ AttoBlock* compileFrink(FrinkProgram* fp) {
 		
       case TOKEN_UNKNOWN:
       default:
-	fprintf(stderr, "Unknown token: `%s'\n", t.content);
+        if(strcmp(t.content, "NULL")) {
+          fprintf(stderr, "Unknown token: `%s'\n", t.content);
+        }
     }
   }
 
