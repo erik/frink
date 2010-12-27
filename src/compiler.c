@@ -1,3 +1,19 @@
+/*   This file is part of Frink.
+ *
+ *   Frink is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   Frink is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with Frink.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "compiler.h"
 
 static Instruction pushConstant(AttoBlock* b, TValue t) {
@@ -27,7 +43,7 @@ static Instruction pushConstant(AttoBlock* b, TValue t) {
       }
     }
   }
-  
+
   if(index != -1) {
     return index;
   }
@@ -45,7 +61,7 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
   IF("pop") {
     PUSH(OP_POP);
   } EIF("dup") {
-    PUSH(OP_DUP);  
+    PUSH(OP_DUP);
   } EIF("swap") {
     PUSH(OP_SWAP);
   } EIF("+") {
@@ -93,7 +109,7 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
       }
       if(!t) {
         fprintf(stderr, "Cannot deref var (%s). Must use '%s value' or '%s set'\n", word, word, word);
-        return -1;        
+        return -1;
       }
       return 1;
     }
@@ -108,7 +124,7 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
 #undef IF
 #undef EIF
 
-// TODO: when more than 3 constants, first opcode's value gets wrecked 
+// TODO: when more than 3 constants, first opcode's value gets wrecked
 // pushing NOP as first inst seems to fix this, but still needs to be fixed
 
 AttoBlock* compileFrink(FrinkProgram* fp) {
@@ -157,7 +173,7 @@ AttoBlock* compileFrink(FrinkProgram* fp) {
 
 	break;
       }
-		
+
       case TOKEN_UNKNOWN:
       default:
         if(strcmp(t.content, "NULL")) {
@@ -173,3 +189,4 @@ AttoBlock* compileFrink(FrinkProgram* fp) {
   return b;
 
 }
+

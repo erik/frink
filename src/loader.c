@@ -1,3 +1,19 @@
+/*   This file is part of Frink.
+ *
+ *   Frink is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   Frink is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with Frink.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <ctype.h>
 #include <string.h>
 
@@ -19,7 +35,7 @@ static char* ReadWord(FILE* fp) {
   isEOL = 0;
 
   long int pos = ftell(fp);
-  
+
   int i = 0;
   while((c = fgetc(fp))) {
     ungetc(c, fp);
@@ -74,10 +90,10 @@ static char* ReadDelim(FILE* fp, char delim) {
   }
 
   fseek(fp, pos, SEEK_SET);
-  
+
   char *str = malloc(i);
   fread(str, 1, i - 1, fp);
-  
+
   str[i-1] = '\0';
 
   // get rid of last delim
@@ -149,7 +165,7 @@ static Token WordToToken(FILE* fp, char* word) {
       }
     }
     return NumberToken(word);
-  } 
+  }
 
   return WordToken(word);
 }
@@ -175,9 +191,9 @@ FrinkProgram* LoadFile(FILE* fp, char* name) {
     }
 
     Token t = WordToToken(fp, word);
-    
+
     //    printf("Token added: %s\n", t.content);
-    
+
     Token* tmp = realloc(tokens, sizeof(Token) * ++numtokens);
     tokens = tmp;
     tokens[numtokens - 1] = t;
@@ -209,7 +225,7 @@ int FrinkProgram_add_var(FrinkProgram *fp, char* var) {
     char** tmp = realloc(fp->vars, sizeof(char*) * ++fp->numvars);
     fp->vars = tmp;
     fp->vars[fp->numvars - 1] = var;
-    
+
     return 0;
   } else {
     fp->vars = malloc(sizeof(char*) * 1);
@@ -217,3 +233,4 @@ int FrinkProgram_add_var(FrinkProgram *fp, char* var) {
     return 0;
   }
 }
+
