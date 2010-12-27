@@ -1,13 +1,23 @@
 #frink
 
 ##About
-FIXME: write
+Frink is an implementation of the Forth programming language, with the
+Atto virtual machine as its compile target. Frink reads .fk, such as
+those in `test/` and compiles them down to Atto bytecode.
+
+I plan to allow the compile/run process to be done directly from
+Frink, without having to run Atto, or generate bytecode. This will be
+added eventually, but right now, it can only compile to bytecode.
 
 ##Usage
-FIXME: write
+Frink depends on Atto to build. After cloning this repository, running
+`make` will clone the Atto repository and build it
+automatically. Running `make distclean all` will remove the old Atto
+lib, and download and build fresh version of the repository.
 
-##Installation
-FIXME: write
+After building frink, compile frink files with `./frink some/file.fk`.
+This will generate `out.ato`, which can be run by the Atto virtual
+machine executable.
 
 ##License
 This program is free software: you can redistribute it and/or modify
