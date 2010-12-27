@@ -3,89 +3,111 @@
 
 #include "loader.h"
 #include "token.h"
-
+/*
 static char *  currWord;
 static char *  currLine;
-static size_t  lineIndex;
+static size_t  lineIndex;*/
 
-static long LineLength(FILE* fp) {
-  fpos_t start;
-  long int bol;
-  long int eol;
+static int     isEOL;
+static int     isEOF;
 
-  fgetpos (fp, &start);
-  bol = ftell(fp);
-  char c;  
-  while((c = fgetc(fp)) != EOF && (c != '\n' || c != '\r')) {}
 
-  eol = ftell(fp);
-
-  fsetpos (fp, &start);
-
-  return eol - bol;
-}
-
-static char* ReadLine(FILE* fp) {
-  lineIndex = 0;
-  long len = LineLength(fp);
-  if(len <= 1) {
+static char* ReadWord(FILE* fp) {
+  if(isEOF) {
     return NULL;
   }
-  char* line = malloc(len + 1);
-  line = fgets(line, len, fp);
 
-  size_t i;
-  for(i = 0; i < strlen(line); ++i) {
-    if(line[i] == '\n') {
-      line[i] = '\0';
+  char c;
+  while(isspace(c = fgetc(fp)));
+  ungetc(c, fp);
+  isEOL = 0;
+
+  long int pos = ftell(fp);
+  
+  int i = 0;
+  while((c = fgetc(fp))) {
+    ungetc(c, fp);
+    fseek(fp, 1, SEEK_CUR);
+    if(c == EOF || feof(fp)) {
+      isEOL = isEOF = 1;
       break;
-    }
-  }
-
-  printf(">>%s<<\n", line);
-  return line;
-}
-
-static void ReadWordFromLine() {
-  if(currLine == NULL) {
-    currWord = NULL;
-    return;
-  }
-  if(currWord == NULL) {
-    currWord = strtok (currLine, " \f\n\r\t\v");
-  } else {
-    currWord = strtok (NULL, " ");
-  }
-
-  if(currWord) {   
-    while(currLine[lineIndex++] != 0);
-  } else {
-    lineIndex = -1;
-  }
-}
-
-static char* ReadString(char* line) {
-  int pos = lineIndex;
-  char* str = malloc(strlen(line) - pos);
-  size_t ctr;  
-
-  for(ctr = pos; ctr < strlen(line); ++ctr) {
-    char c = line[ctr];
-    if(c == EOF || c == 0) {
+    } else if(isspace(c)) {
+      if(c == '\n' || c == '\r') isEOL = 1;
       break;
-    } else if (c == '"') {
-      return str;
     } else {
-      str[ctr] = c;
+      isEOL = isEOF = 0;
+      i++;
     }
   }
 
-  /* if here, string isn't terminated on line */
-  fprintf(stderr, "Unterminated string: %s\n", str);
-  return NULL;
+  fseek(fp, pos, SEEK_SET);
+
+  char *word = malloc(i + 1);
+  fread(word, 1, i, fp);
+  word[i] = '\0';
+
+  return word;
 }
 
-static Token WordToToken(char* line, char* word) {
+static char* ReadDelim(FILE* fp, char delim) {
+  char c;
+  int i = 0;
+
+  fgetc(fp);
+
+  long int pos = ftell(fp);
+
+  while((c = fgetc(fp))) {
+    ungetc(c, fp);
+    fseek(fp, 1, SEEK_CUR);
+    if(c == EOF || feof(fp)) {
+      isEOL = isEOF = 1;
+      break;
+    } else if(c == delim) {
+      i++;
+      break;
+    } else {
+      if(c == '\n' || c == '\r') {
+        isEOL = 1;
+      } else {
+        isEOL = 0;
+      }
+      isEOF = 0;
+      i++;
+    }
+  }
+
+  fseek(fp, pos, SEEK_SET);
+  
+  char *str = malloc(i);
+  fread(str, 1, i - 1, fp);
+  
+  str[i-1] = '\0';
+
+  // get rid of last delim
+  fgetc(fp);
+
+
+  if(isEOF) {
+    fprintf(stderr, "Unterminated delim ('%d'): %s\n", delim, str);
+    return NULL;
+  }
+
+  return str;
+}
+
+static char* ReadString(FILE* fp) {
+  char* str = ReadDelim(fp, '"');
+  return str;
+}
+
+static void ReadComment(FILE*fp) {
+  char* s = ReadDelim(fp, ')');
+  free(s);
+  return;
+}
+
+static Token WordToToken(FILE* fp, char* word) {
   if(word == NULL) {
     return MakeToken("NULL");
   }
@@ -98,26 +120,16 @@ static Token WordToToken(char* line, char* word) {
   if(length == 1) {
     /* string */
     if(word[0] == '"') {
-
-      return StringToken(ReadString(line));
-
+      char *str = ReadString(fp);
+      if(isEOF || str == NULL) {
+        return MakeToken("UNEXPECTED EOF");
+      } else {
+        return StringToken(str);
+      }
       /* comment */
     } else if(word[0] == '(') {
-
-      while(currWord) {
-        ReadWordFromLine();
-        if(currWord && strlen(currWord) == 1 && currWord[0] == ')') {
-          ReadWordFromLine();
-          break;
-        }
-      }
-
-      if(lineIndex >= strlen(line)) {
-        fprintf(stderr, "Unterminated comment on line: %s\n", line);
-        return WordToToken(NULL, NULL);
-      }
-
-      return WordToToken(line, currWord);
+      ReadComment(fp);
+      return WordToToken(fp, ReadWord(fp));
     }
   }
 
@@ -150,33 +162,27 @@ FrinkProgram* LoadFile(FILE* fp, char* name) {
   FrinkProgram* frink = malloc(sizeof(FrinkProgram));
   frink->source = name;
   
+  isEOL = isEOF = 0;
+
   int numtokens = 0;
   Token* tokens = NULL;
 
-  currWord = NULL;
 
-  while(!feof(fp)) {
-    char *line = ReadLine(fp);
-    if(!line) {
+
+  while(!feof(fp) && !isEOF) {
+    char *word = ReadWord(fp);
+
+    if(word == NULL || isEOF) {
       break;
     }
-    char *fakeLine = malloc(strlen(line));
-    strcpy(fakeLine, line);
-    currLine = fakeLine;
 
-    if(line == NULL || feof(fp)) {
-      break;
-    }
-    do {
-      ReadWordFromLine();
-      Token t = WordToToken(line, currWord);
-      
-      printf("Token added: %s\n", t.content);
-
-      Token* tmp = realloc(tokens, sizeof(Token) * ++numtokens);
-      tokens = tmp;
-      tokens[numtokens - 1] = t;
-    } while(currWord != NULL);
+    Token t = WordToToken(fp, word);
+    
+    printf("Token added: %s\n", t.content);
+    
+    Token* tmp = realloc(tokens, sizeof(Token) * ++numtokens);
+    tokens = tmp;
+    tokens[numtokens - 1] = t;
   }
 
   frink->tokens = tokens;

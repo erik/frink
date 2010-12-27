@@ -25,6 +25,7 @@ int main(int argc, char** argv) {
     return usage();
   }
 
+
   FILE* fp = fopen(argv[1], "r");
   char* name = argv[1];
   

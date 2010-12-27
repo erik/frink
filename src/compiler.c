@@ -19,6 +19,8 @@ static Instruction pushConstant(AttoBlock* b, TValue t) {
 	  index = i;
 	}
 	break;
+      case TYPE_NULL:
+        break;
       default:
 	fprintf(stderr, "Unknown type: %d\n", t.type);
 	return -1;
@@ -68,12 +70,18 @@ static void compileWord(AttoBlock *b, char* word) {
 #undef IF
 #undef EIF
 
+// TODO: when more than 3 constants, first opcode's value gets wrecked 
+// pushing NOP as first inst seems to fix this, but still needs to be fixed
+
 AttoBlock* compileFrink(FrinkProgram* fp) {
   AttoBlock* b = AttoBlockNew();
+
+  AttoBlock_push_inst(b, OP_NOP);
 
   int i;
   for(i = 0; i < fp->len; ++i) {
       Token t = fp->tokens[i];
+
       switch(t.type) {
       case TOKEN_WORD: {
 	compileWord(b, t.content);
@@ -90,7 +98,7 @@ AttoBlock* compileFrink(FrinkProgram* fp) {
 	tv.value = v;
 
 	Instruction in = pushConstant(b, tv);
-	AttoBlock_push_inst(b, OP_PUSHCONST);
+	AttoBlock_push_inst(b, (int)OP_PUSHCONST);
 	AttoBlock_push_inst(b, in);
 
 	break;
@@ -99,7 +107,7 @@ AttoBlock* compileFrink(FrinkProgram* fp) {
 	AttoNumber d = strtod(t.content, NULL);
 
 	Instruction in = pushConstant(b, createNumber(d));
-	AttoBlock_push_inst(b, OP_PUSHCONST);
+	AttoBlock_push_inst(b, (int)OP_PUSHCONST);
 	AttoBlock_push_inst(b, in);
 
 	break;
