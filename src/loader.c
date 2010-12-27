@@ -3,10 +3,6 @@
 
 #include "loader.h"
 #include "token.h"
-/*
-static char *  currWord;
-static char *  currLine;
-static size_t  lineIndex;*/
 
 static int     isEOL;
 static int     isEOF;
@@ -161,7 +157,9 @@ static Token WordToToken(FILE* fp, char* word) {
 FrinkProgram* LoadFile(FILE* fp, char* name) {
   FrinkProgram* frink = malloc(sizeof(FrinkProgram));
   frink->source = name;
-  
+  frink->vars    = NULL;
+  frink->numvars = 0;
+
   isEOL = isEOF = 0;
 
   int numtokens = 0;
@@ -178,7 +176,7 @@ FrinkProgram* LoadFile(FILE* fp, char* name) {
 
     Token t = WordToToken(fp, word);
     
-    printf("Token added: %s\n", t.content);
+    //    printf("Token added: %s\n", t.content);
     
     Token* tmp = realloc(tokens, sizeof(Token) * ++numtokens);
     tokens = tmp;
@@ -188,4 +186,34 @@ FrinkProgram* LoadFile(FILE* fp, char* name) {
   frink->tokens = tokens;
   frink->len = numtokens;
   return frink;
+}
+
+
+int FrinkProgram_find_var(FrinkProgram *fp, char* var) {
+  int i;
+  for(i = 0; i < fp->numvars; ++i) {
+    char *cvar = fp->vars[i];
+    if(!strcmp(cvar, var)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int FrinkProgram_add_var(FrinkProgram *fp, char* var) {
+  if(fp->numvars) {
+    if(FrinkProgram_find_var(fp, var)) {
+      return 1;
+    }
+
+    char** tmp = realloc(fp->vars, sizeof(char*) * ++fp->numvars);
+    fp->vars = tmp;
+    fp->vars[fp->numvars - 1] = var;
+    
+    return 0;
+  } else {
+    fp->vars = malloc(sizeof(char*) * 1);
+    fp->vars[fp->numvars++] = var;
+    return 0;
+  }
 }

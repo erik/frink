@@ -1,0 +1,4 @@
+( variable testing)
+var greet
+" hello world" greet set
+greet value .
