@@ -1,4 +1,16 @@
 ( variable testing)
 var greet
-" hello world" greet set
-greet value .
+" Hello world, I am Frink!" greet set
+greet value .cr 
+" " .cr
+
+"   Don't mind me, I just want to test some var addition." .cr
+var x
+var y
+
+2 x set
+3 y set
+
+"   2 3 + = " .
+
+x value y value + .cr

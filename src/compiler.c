@@ -78,6 +78,11 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
     PUSH(OP_POW);
   } EIF (".") {
     PUSH(OP_PRINT);
+  } EIF(".cr") {
+    PUSH(OP_PRINT);
+    PUSH(OP_PUSHCONST);
+    PUSH(pushConstant(b, createString("\n", 1)));
+    PUSH(OP_PRINT);
   } EIF("var"){
     if(tokIndex < fp->len - 1) {
       Token nextToken = fp->tokens[++tokIndex];
@@ -90,28 +95,19 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
       return -1;
     }
     return 1;
+  } EIF("set") {
+    PUSH(OP_SETVAR);
+  } EIF("value") {
+    PUSH(OP_VALUEVAR);
   } else {
     // check if word is a var
     int index = FrinkProgram_find_var(fp, word);
+
     if(index != -1) {
-      int t = 0;
-      if(tokIndex < fp->len - 1) {
-        Token nextToken = fp->tokens[++tokIndex];
-        if(!strcmp(nextToken.content, "set")) {
-          t = 1;
-          PUSH(OP_SETVAR);
-          PUSH(index);
-        } else if (!strcmp(nextToken.content, "value")) {
-          t = 1;
-          PUSH(OP_PUSHVAR);
-          PUSH(index);
-        }
-      }
-      if(!t) {
-        fprintf(stderr, "Cannot deref var (%s). Must use '%s value' or '%s set'\n", word, word, word);
-        return -1;
-      }
-      return 1;
+
+      PUSH(OP_PUSHVAR);
+      PUSH((Instruction)index);
+      return 0;
     }
 
     fprintf(stderr, "Unknown word or var: %s\n", word);

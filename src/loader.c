@@ -218,7 +218,7 @@ int FrinkProgram_find_var(FrinkProgram *fp, char* var) {
 
 int FrinkProgram_add_var(FrinkProgram *fp, char* var) {
   if(fp->numvars) {
-    if(FrinkProgram_find_var(fp, var)) {
+    if(FrinkProgram_find_var(fp, var) != -1) {
       return 1;
     }
 
