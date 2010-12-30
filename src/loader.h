@@ -28,6 +28,11 @@ typedef struct {
   char** vars;
   int numvars;
 
+  char** k;
+  Token* kval;
+  int  * kind;
+  int    numk;
+
 } FrinkProgram;
 
 
@@ -37,7 +42,11 @@ void DestroyFrinkProgram(FrinkProgram*);
 // 0 on success, nonzero on var already defined
 int FrinkProgram_add_var(FrinkProgram*, char*);
 // return index, or -1
-int  FrinkProgram_find_var(FrinkProgram*, char*);
+int FrinkProgram_find_var(FrinkProgram*, char*);
 
+// 0 on success, nonzero on const already defined
+int FrinkProgram_add_const(FrinkProgram*, char*, int, Token);
+// return index, or -1
+int FrinkProgram_find_const(FrinkProgram*, char*);
 #endif /* _LOADER_H_ */
 

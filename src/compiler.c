@@ -83,6 +83,10 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
     PUSH(OP_PUSHCONST);
     PUSH(pushConstant(b, createString("\n", 1)));
     PUSH(OP_PRINT);
+  } EIF("cr") {
+    PUSH(OP_PUSHCONST);
+    PUSH(pushConstant(b, createString("\n", 1)));
+    PUSH(OP_PRINT);
   } EIF("var"){
     if(tokIndex < fp->len - 1) {
       Token nextToken = fp->tokens[++tokIndex];
@@ -99,6 +103,30 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
     PUSH(OP_SETVAR);
   } EIF("value") {
     PUSH(OP_VALUEVAR);
+  } EIF("constant") {
+    if(tokIndex < fp->len - 2) {
+      Token name  = fp->tokens[++tokIndex];
+      Token value = fp->tokens[++tokIndex];
+
+      int ind = FrinkProgram_find_const(fp, name.content);
+      
+      if(ind != -1) {
+        TValue tv = Token_to_TValue(fp->kval[ind]);
+        fprintf(stderr, "Constant `%s' already defined with value `%s' (%s)\n", name.content, TValue_to_string(tv), TValue_type_to_string(tv));
+        return -1;
+      }
+      
+      TValue tv = Token_to_TValue(value);
+
+      int constIndex = pushConstant(b, tv);
+
+      FrinkProgram_add_const(fp, name.content, constIndex, value);
+      return 2;
+    }
+    
+    fprintf(stderr, "Expected constant name and value, but got EOF\n");
+    return -1;
+
   } else {
     // check if word is a var
     int index = FrinkProgram_find_var(fp, word);
@@ -107,6 +135,17 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
 
       PUSH(OP_PUSHVAR);
       PUSH((Instruction)index);
+      return 0;
+    }
+
+    index = FrinkProgram_find_const(fp, word);
+    
+    if(index != -1) {
+      
+      int constIndex = fp->kind[index];
+      
+      PUSH(OP_PUSHCONST);
+      PUSH((Instruction)constIndex);
       return 0;
     }
 
@@ -145,25 +184,16 @@ AttoBlock* compileFrink(FrinkProgram* fp) {
 	break;
       }
       case TOKEN_STRING: {
-	TValue tv;
-	AttoString str;
-	Value v;
-	str.len = strlen(t.content);
-	str.ptr = t.content;
-	v.string = str;
-	tv.type = TYPE_STRING;
-	tv.value = v;
-
-	Instruction in = pushConstant(b, tv);
+        TValue tv = Token_to_TValue(t);
+        Instruction in = pushConstant(b, tv);
 	AttoBlock_push_inst(b, (int)OP_PUSHCONST);
 	AttoBlock_push_inst(b, in);
-
+        
 	break;
       }
       case TOKEN_NUMBER: {
-	AttoNumber d = strtod(t.content, NULL);
-
-	Instruction in = pushConstant(b, createNumber(d));
+        TValue tv = Token_to_TValue(t);
+        Instruction in = pushConstant(b, tv);
 	AttoBlock_push_inst(b, (int)OP_PUSHCONST);
 	AttoBlock_push_inst(b, in);
 
@@ -186,3 +216,20 @@ AttoBlock* compileFrink(FrinkProgram* fp) {
 
 }
 
+
+TValue Token_to_TValue(Token t) {
+  TValue tv;
+  
+  if(t.type == TOKEN_STRING) {
+    tv = createString(t.content, strlen(t.content));
+  } else if(t.type == TOKEN_NUMBER) {
+    AttoNumber n = strtod(t.content, NULL);
+    tv = createNumber(n);
+  } else {
+    fprintf(stderr, "Unrecognized type: %d\n", t.type);
+    tv = createNull();
+  }
+
+  return tv;
+
+}

@@ -21,6 +21,6 @@
 #include "loader.h"
 
 AttoBlock* compileFrink(FrinkProgram*);
-
+TValue Token_to_TValue(Token);
 #endif /* _COMPILER_H_ */
 

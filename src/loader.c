@@ -173,8 +173,15 @@ static Token WordToToken(FILE* fp, char* word) {
 FrinkProgram* LoadFile(FILE* fp, char* name) {
   FrinkProgram* frink = malloc(sizeof(FrinkProgram));
   frink->source = name;
+
   frink->vars    = NULL;
   frink->numvars = 0;
+
+  frink->numk    = 0;
+  frink->k       = NULL;
+  frink->kval    = NULL;
+  frink->kind    = NULL;
+
 
   isEOL = isEOF = 0;
 
@@ -234,3 +241,46 @@ int FrinkProgram_add_var(FrinkProgram *fp, char* var) {
   }
 }
 
+int FrinkProgram_find_const(FrinkProgram* fp, char* name) {
+  int i;
+  for(i = 0; i < fp->numk; ++i) {
+    char* c = fp->k[i];
+    if(!strcmp(c, name)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int FrinkProgram_add_const(FrinkProgram* fp, char* c, int ind, Token t) {
+  if(fp->numk) {
+    if(FrinkProgram_find_const(fp, c) != -1) {
+      return 1;
+    }
+
+    char  **tmpn = realloc(fp->k, sizeof(char*) * ++fp->numk);
+    Token  *tmpk = realloc(fp->kval, sizeof(Token) * fp->numk);
+    int    *tmpi = realloc(fp->kind, sizeof(int) * fp->numk);
+
+    fp->k = tmpn;
+    fp->k[fp->numk - 1] = c;
+
+    fp->kval = tmpk;
+    fp->kval[fp->numk - 1] = t;
+
+    fp->kind = tmpi;
+    fp->kind[fp->numk - 1] = ind;
+
+    return 0;
+  } else {
+    fp->k = malloc(sizeof(char*) * 1);
+    fp->kval = malloc(sizeof(Token) * 1);
+    fp->kind = malloc(sizeof(int) * 1);
+
+    fp->k[fp->numk] = c;
+    fp->kval[fp->numk] = t;
+    fp->kind[fp->numk++] = ind;
+
+    return 0;
+  }
+}

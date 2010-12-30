@@ -50,6 +50,11 @@ int main(int argc, char** argv) {
 
   fclose(fp);
 
+  if(b == NULL) {
+    fprintf(stderr, "Error occurred during compile. Abort\n");
+    return EXIT_FAILURE;
+  }
+
   AttoVM* vm = AttoVMNew();
 
   Proto* p = Proto_from_block(vm, b);
