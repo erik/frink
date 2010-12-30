@@ -1,0 +1,13 @@
+( testing constants)
+constant greeting1 " Hello World, my name is "
+constant greeting2 " It's nice to meet you! :D"
+
+var name
+" boredomist" name set
+
+greeting1 . name value .cr greeting2 .cr
+
+constant x 1
+constant y 2
+
+" Constant math. 1 2 + = " . x y + .cr 
