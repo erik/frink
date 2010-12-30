@@ -19,6 +19,29 @@ After building frink, compile frink files with `./frink some/file.fk`.
 This will generate `out.ato`, which can be run by the Atto virtual
 machine executable.
 
+##Language
+Frink is an implementation of Forth, and as such is a stack
+based language. There are a bunch of standard Forth-ish words, like
+`dup` `swap`, `pop`, .... 
+###Constants
+In Frink you can define constants, which are immutable values,
+probably used frequently in code. They basically act like #define does
+in C. They are set with `constant <name> <value>` and can be used
+throughout the code instead of using the actual value. Value can be
+either a string or a number.
+Here's an example of how to use them:
+       constant number 42
+       number .cr
+###Vars
+Vars are sort-of kind-of like pointers in C (sort of). They cannot be
+accessed directly, but must be set and read with the special words
+`set` and `value`. A var is declared by `var <name>`
+Here's an example:
+       var x
+       1 x  set ( sets the var)
+       x .cr    ( doesn't print 1!)
+                ( prints something like `Var@0xbf8cdb20')
+       x value .cr ( prints 1)
 ##License
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
