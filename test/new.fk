@@ -1,0 +1,14 @@
+( testing atto v1.0 opcodes)
+
+1 2 3 .S clear
+1 .S
+
+var name
+
+" What's your name? > " . 
+gets name set
+
+" Hello, " name value concat .cr
+
+" true: " . true ? .cr
+" false: " . false ? .cr
