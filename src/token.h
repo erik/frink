@@ -23,6 +23,7 @@ typedef enum {
   TOKEN_WORD,
   TOKEN_STRING,
   TOKEN_NUMBER,
+  TOKEN_BOOL,
   TOKEN_UNKNOWN
 } TokenType;
 

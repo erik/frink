@@ -90,8 +90,14 @@ int main(int argc, char** argv) {
   FILE* fp = fopen(file, "r");
   char* name = file;
 
+  if(fp == NULL) {
+    fprintf(stderr, "No such file: %s\n", file);
+    return EXIT_FAILURE;
+  }
+
   FrinkProgram *f = LoadFile(fp, name);
   AttoBlock* b = compileFrink(f);
+  Stack* argStack = StackNew();
 
   fclose(fp);
 
@@ -131,8 +137,6 @@ int main(int argc, char** argv) {
     } else {
       b->vars = NULL;
     }
-
-    Stack* argStack = StackNew();
     
     TValue ret = vm_interpret(vm, b, 0, 0, argStack);
     if(ret.type == TYPE_ERROR) {
@@ -140,9 +144,9 @@ int main(int argc, char** argv) {
     } else {
       status = EXIT_SUCCESS;
     }
-    
     StackDestroy(argStack);
   }
+
   AttoVMDestroy(vm);
   AttoBlockDestroy(b);
 

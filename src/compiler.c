@@ -35,6 +35,10 @@ static Instruction pushConstant(AttoBlock* b, TValue t) {
 	  index = i;
 	}
 	break;
+      case TYPE_BOOL:
+        if(tv.value.bool == t.value.bool) {
+          index = i;
+        }
       case TYPE_NULL:
         break;
       default:
@@ -76,6 +80,14 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
     PUSH(OP_MOD);
   } EIF("^") {
     PUSH(OP_POW);
+  } EIF("true") {
+    PUSH(OP_PUSHCONST);
+    PUSH(pushConstant(b, createBool(1)));
+  } EIF("false") {
+    PUSH(OP_PUSHCONST);
+    PUSH(pushConstant(b, createBool(0)));
+  } EIF("?") {
+    PUSH(OP_BOOLVALUE);
   } EIF (".") {
     PUSH(OP_PRINT);
   } EIF(".cr") {
@@ -87,6 +99,14 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
     PUSH(OP_PUSHCONST);
     PUSH(pushConstant(b, createString("\n", 1)));
     PUSH(OP_PRINT);
+  } EIF("gets") { 
+    PUSH(OP_READLINE);
+  } EIF("concat") {
+    PUSH(OP_CONCAT);
+  } EIF(".S") {
+    PUSH(OP_DUMPSTACK);
+  } EIF("clear") {
+    PUSH(OP_CLEARSTACK);
   } EIF("var"){
     if(tokIndex < fp->len - 1) {
       Token nextToken = fp->tokens[++tokIndex];
@@ -225,6 +245,9 @@ TValue Token_to_TValue(Token t) {
   } else if(t.type == TOKEN_NUMBER) {
     AttoNumber n = strtod(t.content, NULL);
     tv = createNumber(n);
+  } else if(t.type == TOKEN_BOOL) {
+    AttoNumber n = strtod(t.content, NULL);
+    tv = createBool((n ? 1 : 0));
   } else {
     fprintf(stderr, "Unrecognized type: %d\n", t.type);
     tv = createNull();
