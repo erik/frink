@@ -98,6 +98,7 @@ int main(int argc, char** argv) {
   FrinkProgram *f = LoadFile(fp, name);
   AttoBlock* b = compileFrink(f);
   Stack argStack = StackNew();
+  FrinkProgram_destroy(f);
 
   fclose(fp);
 
@@ -126,13 +127,13 @@ int main(int argc, char** argv) {
      * it is necessary for vm_interpret to run correctly
      */
     if(b->sizev > 0 ) {
-      TValue *null = malloc(sizeof(TValue));
-      *null = createNull();
+      TValue null;
+      null = createNull();
       b->vars = malloc(sizeof(TValue) * b->sizev);
       
       int i;
       for( i = 0; i < b->sizev; ++i) {
-        b->vars[i] = createVar(null);
+        b->vars[i] = createVar(&null);
       }
     } else {
       b->vars = NULL;

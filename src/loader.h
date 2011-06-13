@@ -37,7 +37,7 @@ typedef struct {
 
 
 FrinkProgram* LoadFile(FILE*, char*);
-void DestroyFrinkProgram(FrinkProgram*);
+void FrinkProgram_destroy(FrinkProgram*);
 
 // 0 on success, nonzero on var already defined
 int FrinkProgram_add_var(FrinkProgram*, char*);

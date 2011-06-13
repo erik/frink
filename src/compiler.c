@@ -94,11 +94,11 @@ static int compileWord(FrinkProgram* fp, int tokIndex, AttoBlock *b, char* word)
   } EIF(".cr") {
     PUSH(OP_PRINT);
     PUSH(OP_PUSHCONST);
-    PUSH(pushConstant(b, createString("\n", 2)));
+    PUSH(pushConstant(b, createString("\n", 2, 1)));
     PUSH(OP_PRINT);
   } EIF("cr") {
     PUSH(OP_PUSHCONST);
-    PUSH(pushConstant(b, createString("\n", 2)));
+    PUSH(pushConstant(b, createString("\n", 2, 1)));
     PUSH(OP_PRINT);
   } EIF("gets") { 
     PUSH(OP_READLINE);
@@ -242,7 +242,7 @@ TValue Token_to_TValue(Token t) {
   TValue tv;
   
   if(t.type == TOKEN_STRING) {
-    tv = createString(t.content, strlen(t.content) + 1);
+    tv = createString(t.content, strlen(t.content) + 1, 1);
   } else if(t.type == TOKEN_NUMBER) {
     AttoNumber n = strtod(t.content, NULL);
     tv = createNumber(n);

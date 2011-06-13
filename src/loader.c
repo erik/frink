@@ -284,3 +284,17 @@ int FrinkProgram_add_const(FrinkProgram* fp, char* c, int ind, Token t) {
     return 0;
   }
 }
+
+
+void FrinkProgram_destroy(FrinkProgram* f) {
+  int i;
+  for(i = 0; i < f->len; ++i) {
+    free(f->tokens[i].content);
+  }
+  free(f->tokens);
+  free(f->vars);
+  free(f->k);
+  free(f->kval);
+  free(f->kind);
+  free(f);
+}
