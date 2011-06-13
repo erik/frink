@@ -92,9 +92,9 @@ static char* ReadDelim(FILE* fp, char delim) {
   fseek(fp, pos, SEEK_SET);
 
   char *str = malloc(i);
-  fread(str, 1, i - 1, fp);
+  fread(str, sizeof(char), i - 1, fp);
 
-  str[i-1] = '\0';
+  str[i-1] = 0;
 
   // get rid of last delim
   fgetc(fp);
@@ -199,7 +199,7 @@ FrinkProgram* LoadFile(FILE* fp, char* name) {
 
     Token t = WordToToken(fp, word);
 
-    //    printf("Token added: %s\n", t.content);
+    //    printf("Token added: >>%s<<\n", t.content);
 
     Token* tmp = realloc(tokens, sizeof(Token) * ++numtokens);
     tokens = tmp;

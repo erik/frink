@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
 
   FrinkProgram *f = LoadFile(fp, name);
   AttoBlock* b = compileFrink(f);
-  Stack* argStack = StackNew();
+  Stack argStack = StackNew();
 
   fclose(fp);
 
@@ -138,13 +138,13 @@ int main(int argc, char** argv) {
       b->vars = NULL;
     }
     
-    TValue ret = vm_interpret(vm, b, 0, 0, argStack);
+    TValue ret = vm_interpret(vm, b, 0, 0, &argStack);
     if(ret.type == TYPE_ERROR) {
       status = EXIT_FAILURE;
     } else {
       status = EXIT_SUCCESS;
     }
-    StackDestroy(argStack);
+    StackDestroy(&argStack);
   }
 
   AttoVMDestroy(vm);

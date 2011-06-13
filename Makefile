@@ -1,28 +1,33 @@
-CC=clang
-INCS= -Iatto/src/
-LIBS= atto/libatto.a
-CFLAGS= -Wall -Wextra -std=c99 $(INCS) -g
-LNFLAGS= $(LIBS) -lm
-SRC=$(wildcard src/*.c)
-OBJ=$(SRC:.c=.o)
-EXE=frink
+CSRC := $(shell find src -name "*.c")
+CHDR := $(shell find src -name "*.c")
 
-all: atto $(EXE)
+COBJ := $(CSRC:.c=.o)
 
-$(EXE): $(OBJ)
+CC := clang
+
+LIBS := atto/libatto.a
+
+CFLAGS  := -Wall -Wextra -std=c99 -Iatto/src/
+LNFLAGS := $(LIBS) -lm
+
+EXE :=frink
+
+all: atto $(COBJ) $(EXE)
+
+$(EXE): $(COBJ)
 	@echo "link $(EXE)"
-	@$(CC) $(OBJ) $(CFLAGS) $(LNFLAGS) -o$(EXE)
+	@$(CC) $(COBJ) $(LNFLAGS) -o$(EXE)
 
-src/compiler.o: src/compiler.c src/compiler.h
-src/loader.o: src/loader.c src/loader.h src/frink.h
-src/main.o: src/main.c
-
-.c.o:
+%.o: %.c
 	@echo "   cc $<"
 	@$(CC) -c $(CFLAGS) $< -o $@
 
+debug:
+	@cd atto && make clean debug lib
+	@$(MAKE) "CFLAGS=$(CFLAGS) -g -O0"
+
 clean:
-	rm -rf $(EXE) $(OBJ)
+	rm -f $(EXE) $(COBJ)
 
 distclean: clean
 	rm -rf atto/
@@ -42,6 +47,6 @@ atto:
 	@echo "cloning atto"
 	@git clone -q git://github.com/boredomist/atto.git
 	@echo "building atto"
-	@cd atto && make lib
+	@cd atto && make all lib
 
-.PHONY= loc sloc todo atto
+.PHONY= loc sloc todo atto all clean distclean debug
