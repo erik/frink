@@ -1,5 +1,5 @@
 CSRC := $(shell find src -name "*.c")
-CHDR := $(shell find src -name "*.c")
+CHDR := $(shell find include -name "*.c")
 
 COBJ := $(CSRC:.c=.o)
 
@@ -7,7 +7,7 @@ CC := clang
 
 LIBS := atto/libatto.a
 
-CFLAGS  := -Wall -Wextra -std=c99 -Iatto/src/
+CFLAGS  := -Wall -Wextra -std=c99 -Iatto/src/ -Iinclude/
 LNFLAGS := $(LIBS) -lm
 
 EXE :=frink
