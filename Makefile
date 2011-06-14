@@ -7,7 +7,7 @@ CC := clang
 
 LIBS := atto/libatto.a
 
-CFLAGS  := -Wall -Wextra -std=c99 -Iatto/src/ -Iinclude/
+CFLAGS  := -Wall -Wextra -std=c99 -Iatto/src/ -Iatto/include -Iinclude/
 LNFLAGS := $(LIBS) -lm
 
 EXE :=frink
